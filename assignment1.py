@@ -3,21 +3,8 @@ import numpy as np
 import glob
 
 # Constants
-# Constants
 RESIZEDWIDTH = 400
 SQUARESIZE = 22 # milimeters
-CHESSBOARDWIDTH = 6
-CHESSBOARDHEIGHT = 9
-
-criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
-# Stores the corner points.
-objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
-objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
-
-# Arrays to store object points and image points from all the images.
-objpoints = [] # 3d point in real world space
-imgpoints = [] # 2d points in image plane.
 CHESSBOARDWIDTH = 6
 CHESSBOARDHEIGHT = 9
 
@@ -100,6 +87,9 @@ if __name__=="__main__":
         imgpoints.append(corners2)
 
         # Draw and display the corners
+        cv.drawChessboardCorners(img, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH), corners2, ret)
+        cv.imshow('Image', img)
+        cv.waitKey(5000)
         cv.drawChessboardCorners(img, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH), corners2, ret)
         cv.imshow('Image', img)
         cv.waitKey(5000)
