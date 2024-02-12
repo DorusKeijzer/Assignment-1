@@ -5,9 +5,6 @@ import glob
 # Gets the filenames of the images in the Images directory
 images = glob.glob('Images/*.jpg')
 
-
-corners = []
-
 def click_event(event, x, y, flags, params): 
     if event == cv.EVENT_FLAG_LBUTTON:
         corners.append((x,y))
@@ -15,8 +12,14 @@ def click_event(event, x, y, flags, params):
 if __name__=="__main__":   
     # reading the image 
     RESIZEDWIDTH = 400
-    for filename in images:
-        print(f"Image: {filename}")
+    # temporarily stores the corners of one image
+    corners = []
+
+    # stores the corners of multiple images, i.e. allcorners[i] gives the corners for image number i
+    allcorners = []
+
+    for number, filename in enumerate(images):
+        print(f"Image {number}: {filename}")
         img = cv.imread(filename)
         cv.namedWindow('image')
         cv.setMouseCallback('image', click_event) 
@@ -30,7 +33,12 @@ if __name__=="__main__":
             img = cv.resize(img, (RESIZEDWIDTH, int(height*(RESIZEDWIDTH/width))))
             # setting mouse handler for the image 
             # and calling the click_event() function 
-        
+            if len(corners) == 4:
+                print(f"Corner points: {corners}")
+                allcorners.append(corners)
+                corners = []
+                break
+
             # wait for a key to be pressed to exit 
             k = cv.waitKey(1) & 0xFF
     
