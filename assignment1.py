@@ -3,8 +3,21 @@ import numpy as np
 import glob
 
 # Constants
+# Constants
 RESIZEDWIDTH = 400
 SQUARESIZE = 22 # milimeters
+CHESSBOARDWIDTH = 6
+CHESSBOARDHEIGHT = 9
+
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+# Stores the corner points.
+objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
+objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
+
+# Arrays to store object points and image points from all the images.
+objpoints = [] # 3d point in real world space
+imgpoints = [] # 2d points in image plane.
 CHESSBOARDWIDTH = 6
 CHESSBOARDHEIGHT = 9
 
@@ -22,6 +35,9 @@ imgpoints = [] # 2d points in image plane.
 
 # Gets the filenames of the images in the Images directory
 images = glob.glob('Images/*.jpg')
+
+# temporarily stores the corners of one image resulting from the click event
+clickcorners = []
 
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
@@ -68,6 +84,7 @@ if __name__=="__main__":
     for number, filename in enumerate(images):
         print(f"Image {number}: {filename}")
         img = prepareImage(filename)
+        img = prepareImage(filename)
 
         # Find the chess board corners
         ret, corners = cv.findChessboardCorners(img, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT), None)
@@ -78,10 +95,14 @@ if __name__=="__main__":
             ret = True
 
         objpoints.append(objp)
+        imgpoints.append(corners2)
         corners2 = cv.cornerSubPix(img, corners, (11,11), (-1,-1), criteria)
         imgpoints.append(corners2)
 
         # Draw and display the corners
+        cv.drawChessboardCorners(img, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH), corners2, ret)
+        cv.imshow('Image', img)
+        cv.waitKey(5000)
         cv.drawChessboardCorners(img, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH), corners2, ret)
         cv.imshow('Image', img)
         cv.waitKey(5000)
