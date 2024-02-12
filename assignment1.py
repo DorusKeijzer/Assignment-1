@@ -3,8 +3,21 @@ import numpy as np
 import glob
 
 # Constants
+# Constants
 RESIZEDWIDTH = 400
 SQUARESIZE = 22 # milimeters
+CHESSBOARDWIDTH = 6
+CHESSBOARDHEIGHT = 9
+
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+# Stores the corner points.
+objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
+objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
+
+# Arrays to store object points and image points from all the images.
+objpoints = [] # 3d point in real world space
+imgpoints = [] # 2d points in image plane.
 CHESSBOARDWIDTH = 6
 CHESSBOARDHEIGHT = 9
 
@@ -26,6 +39,9 @@ images = glob.glob('Images/*.jpg')
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
 
+# temporarily stores the corners of one image resulting from the click event
+clickcorners = []
+
 def click_event(event, x, y, flags, params): 
     if event == cv.EVENT_FLAG_LBUTTON:
         cv.circle(img, (x,y), 3, 400, -1)
@@ -33,7 +49,8 @@ def click_event(event, x, y, flags, params):
         cv.imshow('image', img) 
 
 def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
-    """ALlows the user to specify the corners, 
+    """ALlows the user to specify the corners. 
+    These corners should be given in the same order as the program does.
     returns an array of the correct size with the corner points"""
     global clickcorners
     cv.imshow('image', img) 
@@ -68,6 +85,7 @@ if __name__=="__main__":
     for number, filename in enumerate(images):
         print(f"Image {number}: {filename}")
         img = prepareImage(filename)
+        img = prepareImage(filename)
 
         # Find the chess board corners
         ret, corners = cv.findChessboardCorners(img, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT), None)
@@ -89,3 +107,5 @@ if __name__=="__main__":
         # close the window 
         cv.destroyAllWindows() 
 
+    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, img.shape[::-1], None, None)
+    print(ret, mtx, dist, rvecs, tvecs)
