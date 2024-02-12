@@ -3,10 +3,8 @@ import numpy as np
 import glob
 
 # Gets the filenames of the images in the Images directory
-images = glob.glob('images/*.jpg')
+images = glob.glob('Images/*.jpg')
 
-for filename in images:
-    img = cv.imread(filename)
 
 corners = []
 
@@ -16,26 +14,29 @@ def click_event(event, x, y, flags, params):
 
 if __name__=="__main__":   
     # reading the image 
-    img = np.zeros((500, 500, 3), np.uint8)
-    cv.namedWindow('image')
-    cv.setMouseCallback('image', click_event) 
+    RESIZEDWIDTH = 400
+    for filename in images:
+        print(f"Image: {filename}")
+        img = cv.imread(filename)
+        cv.namedWindow('image')
+        cv.setMouseCallback('image', click_event) 
 
-    while(True):
-        # displaying the image 
-        cv.imshow('image', img) 
+        while(True):
+            # displaying the image 
+            cv.imshow('image', img) 
+
+            height, width = img.shape[:2]
+
+            img = cv.resize(img, (RESIZEDWIDTH, int(height*(RESIZEDWIDTH/width))))
+            # setting mouse handler for the image 
+            # and calling the click_event() function 
+        
+            # wait for a key to be pressed to exit 
+            k = cv.waitKey(1) & 0xFF
     
-        # setting mouse handler for the image 
-        # and calling the click_event() function 
-    
-        if len(corners) == 4:
-            print(corners)
-            break
-        # wait for a key to be pressed to exit 
-        k = cv.waitKey(1) & 0xFF
- 
-        if k == 27:
-            break
+            if k == 27:
+                break
 
 
-    # close the window 
-    cv.destroyAllWindows() 
+        # close the window 
+        cv.destroyAllWindows() 
