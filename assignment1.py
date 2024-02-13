@@ -28,7 +28,7 @@ def click_event(event, x, y, flags, params):
     if event == cv.EVENT_FLAG_LBUTTON:
         cv.circle(img, (x,y), 3, 400, -1)
         clickcorners.append([x,y])
-        cv.imshow('image', img) 
+        cv.imshow('Image', img) 
 
 def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
     """ALlows the user to specify the corners. 
@@ -39,7 +39,7 @@ def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
     global clickcorners
     
     # Shows the image so the user can click the corners
-    cv.imshow('image', img) 
+    cv.imshow('Image', img) 
 
     # Waits for the user to click 4 corners
     while(len(clickcorners)<4):
@@ -66,8 +66,6 @@ def prepareImage(filename):
     img = cv.imread(filename)
     img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     img = resizeImage(img, RESIZEDWIDTH)
-
-    cv.namedWindow('image')
     return img
 
 def interpolate(corners, chessboardwidth, chessboardheight):
@@ -85,11 +83,11 @@ def interpolate(corners, chessboardwidth, chessboardheight):
                          [chessboardheight-1, chessboardwidth-1]])   
     
     # Finds the transformation matrix 
-    TransformationMatrix = cv.getPerspectiveTransform(corners, corner_chesscoordinates)
+    TransformationMatrix = cv.getPerspectiveTransform(corner_chesscoordinates, corners)
 
     # The coordinates of the chessboard corners in chessboard coordinates (i.e. [[[0,0]],[[0,1]],[[0,2]],...
     #                                                                            [[1,1]],[[1,2]],[[1,3]],..)
-    chessboard_coords = np.float32([[[x, y]] for x in range(chessboardwidth) for y in range(chessboardheight)])
+    chessboard_coords = np.float32([[[x, y]] for x in range(chessboardheight) for y in range(chessboardwidth)])
 
     # applies the transformation
     inner_corners = cv.perspectiveTransform(chessboard_coords, TransformationMatrix)
@@ -106,18 +104,18 @@ if __name__=="__main__":
         ret, corners = cv.findChessboardCorners(img, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT), None)
         # If the built in function cannot distinguish the corner points, the user must manually mark the corners
         if ret: 
-            corners2 = cv.cornerSubPix(img, corners, (11,11), (-1,-1), criteria)
+            corners = cv.cornerSubPix(img, corners, (11,11), (-1,-1), criteria)
         else:
-            cv.setMouseCallback('image', click_event) 
+            cv.imshow('Image',img)
+            cv.setMouseCallback('Image', click_event) 
             corners = manualCorners(img, CHESSBOARDWIDTH, CHESSBOARDHEIGHT)
             ret = True
 
         objpoints.append(objp)
-        print(corners2.shape)
-        imgpoints.append(corners2)
+        imgpoints.append(corners)
 
         # Draw and display the corners
-        cv.drawChessboardCorners(img, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH), corners2, ret)
+        cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
         cv.imshow('Image', img)
         cv.waitKey()
 
