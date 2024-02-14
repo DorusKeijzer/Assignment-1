@@ -8,7 +8,7 @@ criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 # Stores the corner points.
 objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
-objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
+objp[:,:2] = np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
 
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
@@ -17,7 +17,7 @@ imgpoints = [] # 2d points in image plane.
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
 
-def click_event(event, x, y, flags, params): 
+def click_event(event, x, y, flags, param): 
     if event == cv.EVENT_FLAG_LBUTTON:
         cv.circle(img, (x,y), 3, 400, -1)
         clickcorners.append([x,y])
@@ -26,7 +26,11 @@ def click_event(event, x, y, flags, params):
 def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
     """ALlows the user to specify the corners. 
     These corners should be given in the same order as the program does.
-    returns an array of the correct size with the corner points"""
+    returns an array of the correct size with the corner points
+    
+    Order of clicks is important. Correct order for an image in portrait mode: 
+    Top right, bottom right, top left, bottom left
+    """
     
     # The mouse click event writes the corners to this variable, hence it's used here.
     global clickcorners
@@ -59,11 +63,11 @@ def interpolate(corners, chessboardwidth, chessboardheight):
        the pixel coordinates of the 4 corners of a chessboard in an np array of size 4
        the proportions of the chessboard, 
 
-       returns where the internal crossings are as a np array of (chessboardwidth x chessboard height) """
+       returns where the internal crossings are as a np array of size (chessboardwidth x chessboard height) """
 
     # the coordinates of the outer corners of the chessboard in chessboard coordinates
     # these will be used to solve for the transformation matrix
-    # manual coordinates need to be specified in the same order (top left, top right, bottom left, bottom right)
+    # manual coordinates need to be specified in the same order (Top right, bottom right, top left, bottom left)
     corner_chesscoordinates = np.float32([[0,0], 
                          [0,chessboardwidth-1], 
                          [chessboardheight-1, 0], 
@@ -92,7 +96,7 @@ if __name__=="__main__":
             images = glob.glob(f'Images/run{run}/*.jpg')
 
             for number, filename in enumerate(images):
-                print(f"Image {number}: {filename}")
+                print(f"Image {number+1}: {filename}")
                 img = cv.imread(filename)
                 grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
@@ -116,14 +120,14 @@ if __name__=="__main__":
                 # Draw and display the corners
                 cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
                 cv.imshow('Image', img)
-                cv.waitKey(500)
+                cv.waitKey(250)
 
                 # close the window 
                 cv.destroyAllWindows() 
             ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, grey.shape[::-1], None, None)
-
             results.write(f"Run {run}:\n")
-            results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n\n")
+            results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n")
+            results.write(f"Standard deviations intrinsics:\n{rvecs}\nStandard deviation extrinsics:\n {tvecs}\n\n")
 
             print(f"Saving matrix to Calibration_run{run}.npz")
             # save for future use in online phase
