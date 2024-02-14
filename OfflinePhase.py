@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import glob
 from constants import * 
+import utils
 
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -50,17 +51,11 @@ def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
 
     return interpolation
 
-def resizeImage(img, resize_width):
-    """Resizes the image so that the image is of the specified width"""
-    height, width = img.shape[:2]
-    img = cv.resize(img, (resize_width, int(height*(resize_width/width))))
-    return img
-
 def prepareImage(filename):
     """Reads the image and prepares it for being processed"""
     img = cv.imread(filename)
     img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    img = resizeImage(img, RESIZEDWIDTH)
+    img = utils.resizeImage(img, RESIZEDWIDTH)
     return img
 
 def interpolate(corners, chessboardwidth, chessboardheight):
