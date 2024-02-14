@@ -1,7 +1,8 @@
 import numpy as np
 import cv2 as cv
 import glob
-from constants import * 
+from constants import *
+import utils 
 
 images = glob.glob('Images/*.jpg')
 
@@ -31,18 +32,10 @@ def draw(img, corners, imgpts):
 
     return img
 
-
-def resizeImage(img, resize_width):
-    """Resizes the image so that the image is of the specified width"""
-    height, width = img.shape[:2]
-    img = cv.resize(img, (resize_width, int(height*(resize_width/width))))
-    return img
-
-
 if __name__ == "__main__":
     for filename in images:
         img = cv.imread(filename)
-        img = resizeImage(img, RESIZEDWIDTH)
+        img = utils.resizeImage(img, RESIZEDWIDTH)
         gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
         ret, corners = cv.findChessboardCorners(gray, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH),None)
 
