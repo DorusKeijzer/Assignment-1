@@ -123,4 +123,4 @@ if __name__=="__main__":
         cv.destroyAllWindows() 
 
     ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, img.shape[::-1], None, None)
-    print(ret, mtx, dist, rvecs, tvecs)
+    np.savez('Calibration.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
