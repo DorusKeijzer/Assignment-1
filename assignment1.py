@@ -1,12 +1,7 @@
-import cv2 as cv
 import numpy as np
+import cv2 as cv
 import glob
-
-# Constants
-RESIZEDWIDTH = 400
-SQUARESIZE = 22 # milimeters
-CHESSBOARDWIDTH = 6
-CHESSBOARDHEIGHT = 9
+from constants import * 
 
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 

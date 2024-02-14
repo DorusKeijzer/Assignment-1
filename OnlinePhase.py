@@ -1,11 +1,9 @@
 import numpy as np
 import cv2 as cv
 import glob
+from constants import * 
 
 images = glob.glob('Images/*.jpg')
-CHESSBOARDWIDTH = 6
-CHESSBOARDHEIGHT = 9
-RESIZEDWIDTH = 400
 
 # Load the callibration matrix found in the offline phase
 with np.load('Calibration.npz') as X:
