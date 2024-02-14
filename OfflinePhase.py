@@ -14,9 +14,6 @@ objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-# Gets the filenames of the images in the Images directory
-images = glob.glob('Images/*.jpg')
-
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
 
@@ -54,9 +51,8 @@ def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
 def prepareImage(filename):
     """Reads the image and prepares it for being processed"""
     img = cv.imread(filename)
-    img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    img = utils.resizeImage(img, RESIZEDWIDTH)
-    return img
+    grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    return img, grey
 
 def interpolate(corners, chessboardwidth, chessboardheight):
     """Expects:
@@ -67,6 +63,7 @@ def interpolate(corners, chessboardwidth, chessboardheight):
 
     # the coordinates of the outer corners of the chessboard in chessboard coordinates
     # these will be used to solve for the transformation matrix
+    # manual coordinates need to be specified in the same order (top left, top right, bottom left, bottom right)
     corner_chesscoordinates = np.float32([[0,0], 
                          [0,chessboardwidth-1], 
                          [chessboardheight-1, 0], 
@@ -85,32 +82,50 @@ def interpolate(corners, chessboardwidth, chessboardheight):
 
 if __name__=="__main__":   
     # reading the image 
+    # Gets the filenames of the images in the Images directory
 
-    for number, filename in enumerate(images):
-        print(f"Image {number}: {filename}")
-        img = prepareImage(filename)
+    with open("results/results.txt", "w") as results:
+        for run in ["1", "2", "3"]:
+            print(f"Run {run}:")
+            
+            # images for every run are stored in seperate folders
+            images = glob.glob(f'Images/run{run}/*.jpg')
 
-        # Find the chess board corners
-        ret, corners = cv.findChessboardCorners(img, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT), None)
-        # If the built in function cannot distinguish the corner points, the user must manually mark the corners
-        if ret: 
-            corners = cv.cornerSubPix(img, corners, (11,11), (-1,-1), criteria)
-        else:
-            cv.imshow('Image',img)
-            cv.setMouseCallback('Image', click_event) 
-            corners = manualCorners(img, CHESSBOARDWIDTH, CHESSBOARDHEIGHT)
-            ret = True
+            for number, filename in enumerate(images):
+                print(f"Image {number}: {filename}")
+                img = cv.imread(filename)
+                grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-        objpoints.append(objp)
-        imgpoints.append(corners)
+                # Find the chess board corners
+                ret, corners = cv.findChessboardCorners(grey, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT), None)
 
-        # Draw and display the corners
-        cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
-        cv.imshow('Image', img)
-        cv.waitKey()
+                
+                if ret: # the built in function succeeds
+                    corners = cv.cornerSubPix(grey, corners, (11,11), (-1,-1), criteria)
+                else: # the built in function fails
+                    print(f"Please manually provide the corners for {filename}")
+                    cv.imshow('Image', img)
+                    cv.setMouseCallback('Image', click_event) 
+                    corners = manualCorners(img, CHESSBOARDWIDTH, CHESSBOARDHEIGHT)
+                    print(f"Thank you")
+                    ret = True
 
-        # close the window 
-        cv.destroyAllWindows() 
+                objpoints.append(objp)
+                imgpoints.append(corners)
 
-    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, img.shape[::-1], None, None)
-    np.savez('Calibration.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
+                # Draw and display the corners
+                cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
+                cv.imshow('Image', img)
+                cv.waitKey(500)
+
+                # close the window 
+                cv.destroyAllWindows() 
+            ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, grey.shape[::-1], None, None)
+
+            results.write(f"Run {run}:\n")
+            results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n\n")
+
+            print(f"Saving matrix to Calibration_run{run}.npz")
+            # save for future use in online phase
+            np.savez(f'results/Calibration_run{run}.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
+            
