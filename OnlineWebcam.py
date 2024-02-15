@@ -7,49 +7,68 @@ import utils
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
 objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
+
 axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
 
 cam = cv.VideoCapture(0)
-def draw(img, corners, imgpts):
-    # Extracting corner coordinates properly
-    corner = tuple(corners[0].ravel())
-    corner = tuple(map(int, corner))
-    # Extracting imgpts coordinates properly
-    imgpts = np.int32(imgpts).reshape(-1, 2)
-    imgpts = imgpts.astype(int)  # Convert imgpts to Python integers
-    
-    # Drawing lines from corner to imgpts        
-    img = cv.line(img, corner, tuple(imgpts[0]), (255, 0, 0), 2)
-    img = cv.line(img, corner, tuple(imgpts[1]), (0, 255, 0), 2)
-    img = cv.line(img, corner, tuple(imgpts[2]), (0, 0, 255), 2)
 
-    return img
 
 if __name__ == "__main__":
 
     print("Hold a chessboard up in front of the camera to callibrate")
-    print("Press space to take a picture")
-    pictures = []
+    print("Press esc to close")
+    objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
+    objp[:,:2] = np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
+
+    # Arrays to store object points and image points from all the images.
+    objpoints = [] # 3d point in real world space
+    imgpoints = [] # 2d points in image plane.
+    calibrated = False
+    aaaaaaaa = True
     while True:
-        check, frame = cam.read()
-        cv.imshow('video', frame)
+        check, frame = cam.read()    
+
+        # if there are not enough succesful frames to have calibrated with    
+        if len(imgpoints) == NUMBERTOCALIBRATE and not calibrated:
+            print("\nCalibrating...")
+            # calibrate using built in function
+            calibrateret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, grayphoto.shape[::-1], None, None)
+            if calibrateret:
+                print("Calibrated succesfully")
+                calibrated = True
         
-        if len(pictures) == 20:
-            print("AAAAAAAAAa")
+        elif calibrated: 
+            # convert to greyscale
+            gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            ret, corners = cv.findChessboardCorners(gray, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT),None)
+            
+            if ret: # if a chessboard is detected
+                # refine where the corners are 
+                # TODO: Necessary? tradeoff with performance?
+                # corners2 = cv.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
+                corners2 = corners
+                # Find the rotation and translation vectors.
+                ret,rvecs, tvecs = cv.solvePnP(objp, corners2, mtx, dist)
+                # project 3D points to image plane
+                imgpts, jac = cv.projectPoints(axis, rvecs, tvecs, mtx, dist)
+
+                # draw axes on the chessboard
+                img = utils.drawaxes(frame,corners2,imgpts)
+ 
         else:
             photo = frame
+            # convert to greyscale and attempt to detect a chessboard
             grayphoto = cv.cvtColor(photo,cv.COLOR_BGR2GRAY)
             ret, corners = cv.findChessboardCorners(grayphoto, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT),None)
+            # save corners if a chessboard has been found
             if ret:
-                print("Chessboard detected")
-                pictures.append(photo)
-                print(len(pictures))
+                objpoints.append(objp)
+                imgpoints.append(corners)
+                print(f"Collected {len(objpoints)}/{NUMBERTOCALIBRATE} succesful calibration pictures", end= "\r")
 
         key = cv.waitKey(1)
-        if key == 27: # esc = exit webcam
+        if key == 27: # esc = exit loop, i.e. exit webcam
             break
-
-
-        
+        cv.imshow('video', frame)
     cam.release()
     cv.destroyAllWindows()

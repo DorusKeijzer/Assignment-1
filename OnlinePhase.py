@@ -11,22 +11,6 @@ axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
 cubeaxis = np.float32([[0,0,0], [0,3,0], [3,3,0], [3,0,0],
                    [0,0,-3],[0,3,-3],[3,3,-3],[3,0,-3] ])
 
-
-def drawaxes(img, corners, imgpts):
-    # Extracting corner coordinates properly
-    corner = tuple(corners[0].ravel())
-    corner = tuple(map(int, corner))
-    # Extracting imgpts coordinates properly
-    imgpts = np.int32(imgpts).reshape(-1, 2)
-    imgpts = imgpts.astype(int)  # Convert imgpts to Python integers
-    
-    # Drawing lines from corner to imgpts        
-    img = cv.line(img, corner, tuple(imgpts[0]), (255, 0, 0), 2)
-    img = cv.line(img, corner, tuple(imgpts[1]), (0, 255, 0), 2)
-    img = cv.line(img, corner, tuple(imgpts[2]), (0, 0, 255), 2)
-
-    return img
-
 def drawcube(img, corners, imgpts):
     imgpts = np.int32(imgpts).reshape(-1,2)
     # draw ground floor in green
@@ -58,7 +42,7 @@ if __name__ == "__main__":
                 ret, corners = cv.findChessboardCorners(gray, (CHESSBOARDHEIGHT,CHESSBOARDWIDTH),None)
 
                 # if the chessboard is detected
-                if ret == True: 
+                if ret: 
                     corners2 = cv.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
                     # Find the rotation and translation vectors.
                     ret,rvecs, tvecs = cv.solvePnP(objp, corners2, mtx, dist)
@@ -66,7 +50,7 @@ if __name__ == "__main__":
                     # project 3D points to image plane
                     imgpts, jac = cv.projectPoints(axis, rvecs, tvecs, mtx, dist)
 
-                    img = drawaxes(img,corners2,imgpts)
+                    img = utils.drawaxes(img,corners2,imgpts)
                     cv.imshow('img',img)
                     k = cv.waitKey(0) & 0xFF
                     if k == ord('s'):
