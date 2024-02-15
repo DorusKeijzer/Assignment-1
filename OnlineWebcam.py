@@ -43,17 +43,13 @@ if __name__ == "__main__":
             ret, corners = cv.findChessboardCorners(gray, (CHESSBOARDWIDTH,CHESSBOARDHEIGHT),None)
             
             if ret: # if a chessboard is detected
-                # refine where the corners are 
-                # TODO: Necessary? tradeoff with performance?
-                # corners2 = cv.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
-                corners2 = corners
                 # Find the rotation and translation vectors.
-                ret,rvecs, tvecs = cv.solvePnP(objp, corners2, mtx, dist)
+                ret,rvecs, tvecs = cv.solvePnP(objp, corners, mtx, dist)
                 # project 3D points to image plane
                 imgpts, jac = cv.projectPoints(axis, rvecs, tvecs, mtx, dist)
 
                 # draw axes on the chessboard
-                img = utils.drawaxes(frame,corners2,imgpts)
+                img = utils.drawaxes(frame,corners,imgpts)
  
         else:
             photo = frame
