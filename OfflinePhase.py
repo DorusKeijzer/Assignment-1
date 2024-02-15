@@ -143,3 +143,47 @@ if __name__=="__main__":
             print(f"Saving matrix to Calibration_run{run}.npz")
             # save for future use in online phase
             np.savez(f'results/Calibration_run{run}.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
+
+            
+            #plot extrinsics in 3d space
+            # Define camera parameters
+            camera_matrix = mtx
+            dist_coeffs = np.zeros((4,1))  # Assuming no lens distortion
+
+            # Create a matplotlib 3D plot
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+
+            # Arrow Length
+            arrow_length = 0.5  # Adjust this value to change the length of the arrows
+
+            # Box Size
+            size = 1  # Adjust this value to change the size of the box
+
+            # Plot the camera positions
+            for rvec, tvec in zip(rvecs, tvecs):
+                # Project 3D axis points to image plane
+                img_points, _ = cv.projectPoints(np.float32([[0,0,0], [1,0,0], [0,1,0], [0,0,1]]), rvec, tvec, camera_matrix, dist_coeffs)
+                
+                # Extract the image points for plotting
+                img_points = np.int32(img_points).reshape(-1,2)
+                
+                # Plot the lines between the points to represent the camera axes
+                for i in range(3):
+                    ax.plot([img_points[0][0], img_points[i+1][0]], [img_points[0][1], img_points[i+1][1]], zs=0)
+
+                # Plot the camera as a box
+                ax.scatter(tvec[0], tvec[1], tvec[2], color='b', marker='o')  # Camera position
+                R, _ = cv.Rodrigues(rvec)
+                for i in range(3):
+                    ax.quiver(tvec[0], tvec[1], tvec[2], R[0, i]*arrow_length, R[1, i]*arrow_length, R[2, i]*arrow_length, color='r', length=size)
+
+            # Set labels and limits
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')
+            ax.set_xlim([0, 9000])
+            ax.set_ylim([1000, 0])
+            ax.set_zlim([0, 2])
+            
+            plt.show()
