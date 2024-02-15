@@ -124,12 +124,22 @@ if __name__=="__main__":
 
                 # close the window 
                 cv.destroyAllWindows() 
+            #calculate camera matrix and extrinsics     
             ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, grey.shape[::-1], None, None)
+            
+            #calculate error
+            for i in range(len(objpoints)):
+                imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
+                error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+                mean_error += error
+            
             results.write(f"Run {run}:\n")
             results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n")
+            results.write("total error: {}".format(mean_error/len(objpoints)))
+            results.write(f"\n")
             results.write(f"Standard deviations intrinsics:\n{rvecs}\nStandard deviation extrinsics:\n {tvecs}\n\n")
-
+            
+            print(( "total error: {}".format(mean_error/len(objpoints)) ))
             print(f"Saving matrix to Calibration_run{run}.npz")
             # save for future use in online phase
             np.savez(f'results/Calibration_run{run}.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
-            
