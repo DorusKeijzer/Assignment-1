@@ -46,10 +46,10 @@ if __name__ == "__main__":
                 # Find the rotation and translation vectors.
                 ret,rvecs, tvecs = cv.solvePnP(objp, corners, mtx, dist)
                 # project 3D points to image plane
-                imgpts, jac = cv.projectPoints(axis, rvecs, tvecs, mtx, dist)
-
+                imgpts, jac = cv.projectPoints(AXIS, rvecs, tvecs, mtx, dist)
                 # draw axes on the chessboard
-                img = utils.drawaxes(frame,corners,imgpts)
+                img = utils.drawaxes(frame,corners,imgpts[0:3])
+                img = utils.drawcube(frame,corners,imgpts[3:])
  
         else:
             photo = frame

@@ -1,6 +1,13 @@
 import cv2 as cv 
 import numpy as np
 
+def drawcube(img, corners, imgpts):
+    imgpts = np.int32(imgpts).reshape(-1,2)
+    # draw pillars in blue color
+    for i,j in zip(range(12),range(12,24)):
+        img = cv.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(236, 245, 66),2)
+    return img
+
 def drawaxes(img, corners, imgpts):
     # Extracting corner coordinates properly
     corner = tuple(corners[0].ravel())

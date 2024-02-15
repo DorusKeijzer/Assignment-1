@@ -12,16 +12,6 @@ axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
 
 modified_folder = "results/images/"
 
-def drawcube(img, corners, imgpts):
-    imgpts = np.int32(imgpts).reshape(-1,2)
-    # draw pillars in blue color
-    for i,j in zip(range(4),range(4,8)):
-        img = cv.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
-    # draw top layer in red color
-    img = cv.drawContours(img, [imgpts[4:]],-1,(0,0,255),3)
-    return img
-
-
 if __name__ == "__main__":
 
     for run in ["1","2","3"]:
@@ -47,9 +37,12 @@ if __name__ == "__main__":
                     ret,rvecs, tvecs = cv.solvePnP(objp, corners2, mtx, dist)
                     
                     # project 3D points to image plane
-                    imgpts, jac = cv.projectPoints(axis, rvecs, tvecs, mtx, dist)
-
-                    img = utils.drawaxes(img,corners2,imgpts)
+                    # imgpts contains both the points for the axes (index 0 to 3) 
+                    # and for the cube (other indices)
+                    imgpts, _ = cv.projectPoints(AXIS, rvecs, tvecs, mtx, dist )
+                    # draw the cube and the axes
+                    img = utils.drawaxes(img, corners2, imgpts[0:3])
+                    img = utils.drawcube(img, corners2, imgpts[3:])
                     cv.imshow('img',img)
                     k = cv.waitKey(0) & 0xFF
                     # if the user presses s, save the image to the results folder

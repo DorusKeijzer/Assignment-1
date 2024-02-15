@@ -120,7 +120,7 @@ if __name__=="__main__":
                 # Draw and display the corners
                 cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
                 cv.imshow('Image', img)
-                cv.waitKey(250)
+                key = cv.waitKey(250)
 
                 # close the window 
                 cv.destroyAllWindows() 
