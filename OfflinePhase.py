@@ -3,8 +3,18 @@ import cv2 as cv
 import glob
 from constants import * 
 import utils
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+# Stores the corner points.
+objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
+objp[:,:2] = np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
+
+# Arrays to store object points and image points from all the images.
+objpoints = [] # 3d point in real world space
+imgpoints = [] # 2d points in image plane.
 
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
@@ -21,7 +31,7 @@ def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
     returns an array of the correct size with the corner points
     
     Order of clicks is important. Correct order for an image in portrait mode: 
-    Bottom right, bottom left, top right, top left
+    Top right, bottom right, top left, bottom left
     """
     
     # The mouse click event writes the corners to this variable, hence it's used here.
@@ -59,8 +69,8 @@ def interpolate(corners, chessboardwidth, chessboardheight):
 
     # the coordinates of the outer corners of the chessboard in chessboard coordinates
     # these will be used to solve for the transformation matrix
-    # manual coordinates need to be specified in the same order (Bottom right, bottom left, top right, top left)
-    corner_chesscoordinates = SQUARESIZE * np.float32([[0,0], 
+    # manual coordinates need to be specified in the same order (Top right, bottom right, top left, bottom left)
+    corner_chesscoordinates = np.float32([[0,0], 
                          [0,chessboardwidth-1], 
                          [chessboardheight-1, 0], 
                          [chessboardheight-1, chessboardwidth-1]])   
@@ -70,8 +80,7 @@ def interpolate(corners, chessboardwidth, chessboardheight):
 
     # The coordinates of the chessboard corners in chessboard coordinates (i.e. [[[0,0]],[[0,1]],[[0,2]],...
     #                                                                            [[1,1]],[[1,2]],[[1,3]],..)
-    # multiplied by the square size
-    chessboard_coords = SQUARESIZE * np.float32([[[x, y]] for x in range(chessboardheight) for y in range(chessboardwidth)])
+    chessboard_coords = np.float32([[[x, y]] for x in range(chessboardheight) for y in range(chessboardwidth)])
 
     # applies the transformation
     inner_corners = cv.perspectiveTransform(chessboard_coords, TransformationMatrix)
@@ -82,16 +91,7 @@ if __name__=="__main__":
     # Gets the filenames of the images in the Images directory
 
     with open("results/results.txt", "w") as results:
-        for run in ["1", "2", "3"]:
-            # Stores the corner points.
-            objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
-            objp[:,:2] = SQUARESIZE * np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
-
-            # Arrays to store object points and image points from all the images.
-            objpoints = [] # 3d point in real world space
-            imgpoints = [] # 2d points in image plane.
-
-
+        for run in ["3", "2", "1"]:
             print(f"Run {run}:")
             
             # images for every run are stored in seperate folders
@@ -122,7 +122,7 @@ if __name__=="__main__":
                 # Draw and display the corners
                 cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
                 cv.imshow('Image', img)
-                key = cv.waitKey(250)
+                cv.waitKey(250)
 
                 # close the window 
                 cv.destroyAllWindows() 
@@ -138,12 +138,15 @@ if __name__=="__main__":
             results.write(f"Run {run}:\n")
             results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n")
             results.write("total error: {}".format(mean_error/len(objpoints)))
-            results.write("\n")
-
+            results.write(f"\n")
+            results.write(f"Standard deviations intrinsics:\n{rvecs}\nStandard deviation extrinsics:\n {tvecs}\n\n")
+            
+            print(( "total error: {}".format(mean_error/len(objpoints)) ))
             print(f"Saving matrix to Calibration_run{run}.npz")
             # save for future use in online phase
             np.savez(f'results/Calibration_run{run}.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
-
+            
+            
             
             #plot extrinsics in 3d space
             # Define camera parameters
@@ -185,5 +188,6 @@ if __name__=="__main__":
             ax.set_xlim([0, 9000])
             ax.set_ylim([1000, 0])
             ax.set_zlim([0, 2])
-            
+
+            # Show the plot
             plt.show()
