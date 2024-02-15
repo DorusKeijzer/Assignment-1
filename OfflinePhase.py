@@ -99,7 +99,15 @@ if __name__=="__main__":
 
             for number, filename in enumerate(images):
                 print(f"Image {number+1}: {filename}")
-                img = cv.imread(filename)
+                image = cv.imread(filename)
+                
+                # Create the sharpening kernel 
+                kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]) 
+
+                # Sharpen the image 
+                img = cv.filter2D(image, -1, kernel) 
+
+                
                 grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
                 # Find the chess board corners
