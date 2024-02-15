@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import os
 import glob
 from constants import *
 import utils 
@@ -8,13 +9,11 @@ criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
 objp[:,:2] = np.mgrid[0:CHESSBOARDHEIGHT,0:CHESSBOARDWIDTH].T.reshape(-1,2)
 axis = np.float32([[3,0,0], [0,3,0], [0,0,-3]]).reshape(-1,3)
-cubeaxis = np.float32([[0,0,0], [0,3,0], [3,3,0], [3,0,0],
-                   [0,0,-3],[0,3,-3],[3,3,-3],[3,0,-3] ])
+
+modified_folder = "results/images/"
 
 def drawcube(img, corners, imgpts):
     imgpts = np.int32(imgpts).reshape(-1,2)
-    # draw ground floor in green
-    img = cv.drawContours(img, [imgpts[:4]],-1,(0,255,0),-3)
     # draw pillars in blue color
     for i,j in zip(range(4),range(4,8)):
         img = cv.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
@@ -25,7 +24,7 @@ def drawcube(img, corners, imgpts):
 
 if __name__ == "__main__":
 
-    for run in ["1","2", "3"]:
+    for run in ["1","2","3"]:
         print(f"Run {run}:")
         # images for every run are stored in seperate folders
         images = glob.glob(f'Images/run{run}/*.jpg')
@@ -53,7 +52,13 @@ if __name__ == "__main__":
                     img = utils.drawaxes(img,corners2,imgpts)
                     cv.imshow('img',img)
                     k = cv.waitKey(0) & 0xFF
+                    # if the user presses s, save the image to the results folder
                     if k == ord('s'):
-                        cv.imwrite(filename[:6]+'.png', img)
-
+                        path = os.path.basename(filename)
+                        path = os.path.splitext(path)[0]+'_axes.png'
+                        modified_image_path = os.path.join(modified_folder, path)
+                        print(f"Saved to {modified_image_path}")
+                        cv.imwrite(modified_image_path, img)
+    
                 cv.destroyAllWindows()
+
