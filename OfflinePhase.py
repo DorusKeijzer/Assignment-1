@@ -6,14 +6,6 @@ import utils
 
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-# Stores the corner points.
-objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
-objp[:,:2] = SQUARESIZE * np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
-
-# Arrays to store object points and image points from all the images.
-objpoints = [] # 3d point in real world space
-imgpoints = [] # 2d points in image plane.
-
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
 
@@ -91,6 +83,15 @@ if __name__=="__main__":
 
     with open("results/results.txt", "w") as results:
         for run in ["1", "2", "3"]:
+            # Stores the corner points.
+            objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
+            objp[:,:2] = SQUARESIZE * np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
+
+            # Arrays to store object points and image points from all the images.
+            objpoints = [] # 3d point in real world space
+            imgpoints = [] # 2d points in image plane.
+
+
             print(f"Run {run}:")
             
             # images for every run are stored in seperate folders
