@@ -5,7 +5,7 @@ def drawcube(img, corners, imgpts):
     imgpts = np.int32(imgpts).reshape(-1,2)
     # draw pillars in blue color
     for i,j in zip(range(12),range(12,24)):
-        img = cv.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(236, 245, 66),2)
+        img = cv.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(66, 245, 236),1)
     return img
 
 def drawaxes(img, corners, imgpts):
