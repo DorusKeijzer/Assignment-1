@@ -128,6 +128,7 @@ if __name__=="__main__":
             results.write(f"Run {run}:\n")
             results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n")
             results.write(f"Standard deviations intrinsics:\n{rvecs}\nStandard deviation extrinsics:\n {tvecs}\n\n")
+            results.write(( "total error: {}".format(mean_error/len(objpoints)) ))
 
             print(f"Saving matrix to Calibration_run{run}.npz")
             # save for future use in online phase
