@@ -3,8 +3,18 @@ import cv2 as cv
 import glob
 from constants import * 
 import utils
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+# Stores the corner points.
+objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
+objp[:,:2] = np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
+
+# Arrays to store object points and image points from all the images.
+objpoints = [] # 3d point in real world space
+imgpoints = [] # 2d points in image plane.
 
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
@@ -21,7 +31,7 @@ def manualCorners(img, chessboardwidth, chessboardheight) -> np.array:
     returns an array of the correct size with the corner points
     
     Order of clicks is important. Correct order for an image in portrait mode: 
-    Bottom right, bottom left, top right, top left
+    Top right, bottom right, top left, bottom left
     """
     
     # The mouse click event writes the corners to this variable, hence it's used here.
@@ -59,8 +69,8 @@ def interpolate(corners, chessboardwidth, chessboardheight):
 
     # the coordinates of the outer corners of the chessboard in chessboard coordinates
     # these will be used to solve for the transformation matrix
-    # manual coordinates need to be specified in the same order (Bottom right, bottom left, top right, top left)
-    corner_chesscoordinates = SQUARESIZE * np.float32([[0,0], 
+    # manual coordinates need to be specified in the same order (Top right, bottom right, top left, bottom left)
+    corner_chesscoordinates = np.float32([[0,0], 
                          [0,chessboardwidth-1], 
                          [chessboardheight-1, 0], 
                          [chessboardheight-1, chessboardwidth-1]])   
@@ -70,8 +80,7 @@ def interpolate(corners, chessboardwidth, chessboardheight):
 
     # The coordinates of the chessboard corners in chessboard coordinates (i.e. [[[0,0]],[[0,1]],[[0,2]],...
     #                                                                            [[1,1]],[[1,2]],[[1,3]],..)
-    # multiplied by the square size
-    chessboard_coords = SQUARESIZE * np.float32([[[x, y]] for x in range(chessboardheight) for y in range(chessboardwidth)])
+    chessboard_coords = np.float32([[[x, y]] for x in range(chessboardheight) for y in range(chessboardwidth)])
 
     # applies the transformation
     inner_corners = cv.perspectiveTransform(chessboard_coords, TransformationMatrix)
@@ -93,16 +102,7 @@ if __name__=="__main__":
     # Gets the filenames of the images in the Images directory
 
     with open("results/results.txt", "w") as results:
-        for run in ["1", "2", "3"]:
-            # Stores the corner points.
-            objp = np.zeros((CHESSBOARDWIDTH*CHESSBOARDHEIGHT,3), np.float32)
-            objp[:,:2] = SQUARESIZE * np.mgrid[0:CHESSBOARDWIDTH,0:CHESSBOARDHEIGHT].T.reshape(-1,2)
-
-            # Arrays to store object points and image points from all the images.
-            objpoints = [] # 3d point in real world space
-            imgpoints = [] # 2d points in image plane.
-
-
+        for run in ["3", "2", "1"]:
             print(f"Run {run}:")
             
             # images for every run are stored in seperate folders
@@ -110,7 +110,15 @@ if __name__=="__main__":
 
             for number, filename in enumerate(images):
                 print(f"Image {number+1}: {filename}")
-                img = cv.imread(filename)
+                image = cv.imread(filename)
+                
+                # Create the sharpening kernel 
+                kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]) 
+
+                # Sharpen the image 
+                img = cv.filter2D(image, -1, kernel) 
+
+                
                 grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
                 # Find the chess board corners
@@ -134,7 +142,7 @@ if __name__=="__main__":
                 # Draw and display the corners
                 cv.drawChessboardCorners(img, (CHESSBOARDWIDTH, CHESSBOARDHEIGHT), corners, ret)
                 cv.imshow('Image', img)
-                key = cv.waitKey(250)
+                cv.waitKey(250)
 
                 # close the window 
                 cv.destroyAllWindows() 
@@ -169,3 +177,49 @@ if __name__=="__main__":
             print(f"Saving matrix to Calibration_run{run}.npz")
             # save for future use in online phase
             np.savez(f'results/Calibration_run{run}.npz', mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
+            
+            
+            
+            #plot extrinsics in 3d space
+            # Define camera parameters
+            camera_matrix = mtx
+            dist_coeffs = np.zeros((4,1))  # Assuming no lens distortion
+
+            # Create a matplotlib 3D plot
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+
+            # Arrow Length
+            arrow_length = 0.5  # Adjust this value to change the length of the arrows
+
+            # Box Size
+            size = 1  # Adjust this value to change the size of the box
+
+            # Plot the camera positions
+            for rvec, tvec in zip(rvecs, tvecs):
+                # Project 3D axis points to image plane
+                img_points, _ = cv.projectPoints(np.float32([[0,0,0], [1,0,0], [0,1,0], [0,0,1]]), rvec, tvec, camera_matrix, dist_coeffs)
+                
+                # Extract the image points for plotting
+                img_points = np.int32(img_points).reshape(-1,2)
+                
+                # Plot the lines between the points to represent the camera axes
+                for i in range(3):
+                    ax.plot([img_points[0][0], img_points[i+1][0]], [img_points[0][1], img_points[i+1][1]], zs=0)
+
+                # Plot the camera as a box
+                ax.scatter(tvec[0], tvec[1], tvec[2], color='b', marker='o')  # Camera position
+                R, _ = cv.Rodrigues(rvec)
+                for i in range(3):
+                    ax.quiver(tvec[0], tvec[1], tvec[2], R[0, i]*arrow_length, R[1, i]*arrow_length, R[2, i]*arrow_length, color='r', length=size)
+
+            # Set labels and limits
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')
+            ax.set_xlim([0, 9000])
+            ax.set_ylim([1000, 0])
+            ax.set_zlim([0, 2])
+
+            # Show the plot
+            plt.show()
