@@ -8,7 +8,7 @@ criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 # temporarily stores the corners of one image resulting from the click event
 clickcorners = []
-
+rejectLowQuality = True
 def click_event(event, x, y, flags, param): 
     if event == cv.EVENT_FLAG_LBUTTON:
         cv.circle(img, (x,y), 3, 400, -1)
@@ -77,6 +77,17 @@ def interpolate(corners, chessboardwidth, chessboardheight):
     inner_corners = cv.perspectiveTransform(chessboard_coords, TransformationMatrix)
     return inner_corners.reshape(-1, 1, 2)
 
+def calculateError(output, objpoints, imgpoints):
+    """"Calculates the error when reprojecting the object points using the matrix obtained by calibrateCamera()
+    returns an array of the error for each image"""
+    errors = []
+    ret, mtx, dist, rvecs, tvecs = output
+    for i in range(len(objpoints)):
+        imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
+        error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+        errors.append(error)
+    return np.array(errors)
+
 if __name__=="__main__":   
     # reading the image 
     # Gets the filenames of the images in the Images directory
@@ -109,7 +120,8 @@ if __name__=="__main__":
                 if ret: # the built in function succeeds
                     corners = cv.cornerSubPix(grey, corners, (11,11), (-1,-1), criteria)
                 else: # the built in function fails
-                    print(f"Please manually provide the corners for {filename}")
+                    print(f"Please manually provide the corners for {filename} in this order: ")
+                    print("Bottom right, bottom left, top right, top left")
                     cv.imshow('Image', img)
                     cv.setMouseCallback('Image', click_event) 
                     corners = manualCorners(img, CHESSBOARDWIDTH, CHESSBOARDHEIGHT)
@@ -127,17 +139,31 @@ if __name__=="__main__":
                 # close the window 
                 cv.destroyAllWindows() 
             #calculate camera matrix and extrinsics     
-            ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, grey.shape[::-1], None, None)
-            
+            calibrationoutput = cv.calibrateCamera(objpoints, imgpoints, grey.shape[::-1], None, None)
+            ret, mtx, dist, rvecs, tvecs = calibrationoutput
             #calculate error
-            for i in range(len(objpoints)):
-                imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
-                error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
-                mean_error += error
-            
+            errors = calculateError(calibrationoutput, objpoints, imgpoints)
+            print(f"Mean error: {sum(errors)/len(errors)}")
+
+            if rejectLowQuality:
+                # Calculate the interquartile range (IQR)
+                Q1 = np.percentile(errors, 25)
+                Q3 = np.percentile(errors, 75)
+                IQR = Q3 - Q1
+
+                # using the 1.5 + IQR rule
+                lower_bound = Q1 - 1.5 * IQR
+                upper_bound = Q3 + 1.5 * IQR
+
+                # Reject outliers
+                filtered_data = errors[(errors >= lower_bound) & (errors <= upper_bound)]
+                print(f"Rejected {len(errors)-len(filtered_data)} images")
+                print(f"Old error: {np.mean(errors)} ")
+                print(f"New error: {np.mean(filtered_data)} ")
+
             results.write(f"Run {run}:\n")
             results.write(f"Camera matrix:\n{mtx}\nDistance coefficients:\n {dist}\n")
-            results.write("total error: {}".format(mean_error/len(objpoints)))
+            results.write(f"total error: {errors/len(errors)}")
             results.write("\n")
 
             print(f"Saving matrix to Calibration_run{run}.npz")
