@@ -102,7 +102,7 @@ if __name__=="__main__":
     # Gets the filenames of the images in the Images directory
 
     with open("results/results.txt", "w") as results:
-        for run in ["3", "2", "1"]:
+        for run in [ "3", "2", "1"]:
             print(f"Run {run}:")
             
             # images for every run are stored in seperate folders
@@ -112,6 +112,7 @@ if __name__=="__main__":
                 print(f"Image {number+1}: {filename}")
                 image = cv.imread(filename)
                 
+                # enhancing the image by sharpening it
                 # Create the sharpening kernel 
                 kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]) 
 
@@ -190,7 +191,7 @@ if __name__=="__main__":
             ax = fig.add_subplot(111, projection='3d')
 
             # Arrow Length
-            arrow_length = 0.5  # Adjust this value to change the length of the arrows
+            arrow_length = 1  # Adjust this value to change the length of the arrows
 
             # Box Size
             size = 1  # Adjust this value to change the size of the box
@@ -217,9 +218,9 @@ if __name__=="__main__":
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
             ax.set_zlabel('Z')
-            ax.set_xlim([0, 9000])
-            ax.set_ylim([1000, 0])
-            ax.set_zlim([0, 2])
+            ax.set_xlim([0, 10])
+            ax.set_ylim([10, 0])
+            ax.set_zlim([0, 15])
 
             # Show the plot
             plt.show()
